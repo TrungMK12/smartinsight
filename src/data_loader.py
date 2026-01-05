@@ -18,9 +18,17 @@ def extract_text_from_txt(path: str) -> str:
     with open(path,'r',encoding='utf-8') as f:
         return f.read()
     
-def clean_text(text: str) -> str:
+def clean_text(mode: str, path: str) -> str:
+    if mode == "pdf":
+        text = extract_text_from_pdf(path)
+    elif mode == "docx":
+        text = extract_text_from_docx(path)
+    elif mode == "txt":
+        text = extract_text_from_txt(path)
+
     text = re.sub(r'\n{2,}','\n',text)
     text = re.sub(r'Page\s*\d+\W*\s*\d+','',text,flags=re.IGNORECASE)
     text = re.sub(r'\s{2,}',' ',text)
+
     return text
     
