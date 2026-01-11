@@ -35,3 +35,10 @@ env/
 # Project specific
 *.log
 .env
+
+__pycache__/
+*.pyc
+.venv/
+env/
+
+backend/test.py

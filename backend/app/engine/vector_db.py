@@ -1,9 +1,10 @@
+from backend.app.core.config import settings
 from sentence_transformers import SentenceTransformer
 import numpy as np
 import json
 
 class MiniVectorBase:
-    def __init__(self, model_name="all-MiniLM-L6-v2"):
+    def __init__(self, model_name: str = settings.vector_modelname):
         self.model = SentenceTransformer(model_name)
         self.vector = None
         self.metadata = []
