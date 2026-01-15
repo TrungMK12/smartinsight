@@ -5,30 +5,27 @@ from backend.app.engine.processor import clean_text, chunking_text
 import os
 
 router = APIRouter(
-    prefix="/upload",
-    tags=["Upload"]
+    prefix="/upload"
 )
 
 vb = MiniVectorBase()
 
 UPLOAD_DIR = "backend/data/uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
-VECTOR_DIR = "backend/data/vector"
+VECTOR_DIR = "backend/data/vectors"
 os.makedirs(VECTOR_DIR, exist_ok=True)
 
 @router.post("/")
 async def upload_file(file: UploadFile = File(...)):
-    file = file.filename
-
-    file_type = file.split(".")[-1].lower()
+    file_type = file.filename.split(".")[-1].lower()
     if file_type not in ["txt", "docx", "pdf"]:
-        return HTTPException(status_code=400, detail="Unsupported file type")
+        raise HTTPException(status_code=400, detail="Unsupported file type")
     
     max_file_size = 10*1024*1024
     if file.size > max_file_size:
-        return HTTPException(status_code=400, detail="File size exceeds the limit of 10MB")
+        raise HTTPException(status_code=400, detail="File size exceeds the limit of 10MB")
 
-    file_name = "".join(file.split(".")[:-1]).lower()
+    file_name = "".join(file.filename.split(".")[:-1]).lower()
     file_path = os.path.join(UPLOAD_DIR, file_name)
     vector_path = os.path.join(VECTOR_DIR, f"{file_name}_vector")
 
@@ -37,7 +34,7 @@ async def upload_file(file: UploadFile = File(...)):
             shutil.copyfileobj(file.file, f)
 
         text = clean_text(file_type, file_path)
-        chunks = chunking_text(file_type, text)
+        chunks = chunking_text(text)
         for chunk in chunks:
             vb.add(chunk)
         vb.save(vector_path)

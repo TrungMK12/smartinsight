@@ -32,11 +32,11 @@ class MiniVectorBase:
         return similarity[:top_k]
     
     def save(self, file_path: str):
-        np.save(file_path + ".vectors.npy", self.vectors)
+        np.save(file_path + ".vectors.npy", self.vector)
         with open(file_path + ".meta.json", "w", encoding="utf-8") as f:
             json.dump(self.metadata, f, ensure_ascii=False)
 
     def load(self, file_path):
-        self.vectors = np.load(file_path + ".vectors.npy")
+        self.vector = np.load(file_path + ".vectors.npy")
         with open(file_path + ".meta.json", "r", encoding="utf-8") as f:
-            self.metadata = json.dump(f)
+            self.metadata = json.load(f)
