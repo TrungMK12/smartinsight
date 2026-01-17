@@ -41,4 +41,4 @@ __pycache__/
 .venv/
 env/
 
-backend/test.py
+test.py
