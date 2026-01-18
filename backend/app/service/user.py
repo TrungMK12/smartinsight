@@ -38,8 +38,10 @@ class UserService:
             return UserInDB(**user)
         return None
     
-    async def get_user_by_username(self, username: str) -> Optional[UserInDB]:
-        user = await self.collection.find_one({"username": username})
+    async def get_user_by_id(self, user_id: str) -> Optional[UserInDB]:
+        if not ObjectId.is_valid(user_id):
+            return None
+        user = await self.collection.find_one({"_id": ObjectId(user_id)})
         if user:
             user["_id"] = str(user["_id"])
             return UserInDB(**user)
@@ -64,13 +66,7 @@ class UserService:
             return UserInDB(**result)
         return None
     
-    async def auth_user(self, password: str, username: str = None, email: str = None) -> Optional[UserInDB]:
-        if not username and not email:
-            return None
-        if username and email:
-            return None  
-        if username:
-            user = await self.get_user_by_username(username)
+    async def auth_user(self, password: str, email: str = None) -> Optional[UserInDB]:
         if email:
             user = await self.get_user_by_email(email)
         if not user:
