@@ -21,6 +21,14 @@ app.add_middleware(
     allow_headers = ['*']
 )
 
+@app.get("/health")
+def heath_check():
+    return {"status": "ok"}
+
+@app.get("/")
+def root():
+    return {"message": "Welcome to SmartInsight API"}
+
 app.include_router(
     user.router,
     prefix="/api",
@@ -38,11 +46,3 @@ app.include_router(
     prefix="/api",
     tags=["Chat"]
 )
-
-@app.get("/health")
-def heath_check():
-    return {"status": "ok"}
-
-@app.get("/")
-def root():
-    return {"message": "Welcome to SmartInsight API"}
