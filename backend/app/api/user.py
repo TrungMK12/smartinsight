@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from backend.app.core.security import Security
+from backend.app.core.security import Security, get_current_user
 from backend.app.schema.auth import LoginRequest, Token
 from backend.app.schema.response import ResponseModel
 from backend.app.schema.user import UserCreate, UserResponse
@@ -79,6 +79,22 @@ async def refresh_access_token(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Could not validate credentials: {str(e)}"
         )
+    
+@router.get("/me")
+async def user_info(
+    current_user = Depends(get_current_user),
+    db: AsyncDatabase = Depends(get_db)
+):
+    us = UserService(db)
+    user_id = current_user.get("sub")
+    user = await us.get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    return UserResponse(**user.model_dump())
+
 
      
 
