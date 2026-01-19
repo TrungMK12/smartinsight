@@ -49,5 +49,36 @@ async def user_login(
     access_token = Security.create_access_token({"sub": user.id, "role": user.role})
     refresh_token = Security.create_refresh_token({"sub": user.id})
     return Token(access_token, refresh_token)
+
+@router.post("/refresh", response_model=Token, status_code=status.HTTP_200_OK)
+async def refresh_access_token(
+    refresh_token: str,
+    db: AsyncDatabase = Depends(get_db)
+):
+    try:
+        payload = Security.decoded_jwt(refresh_token)
+        if not Security.verify_token_type(payload, "refresh"):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token type"
+            )
+        us = UserService(db)
+        user = await us.get_user_by_id(payload.get("sub"))
+        if not user or not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found or inactive"
+            )
+        access_token = Security.create_access_token({"sub": user.id, "role": user.role})
+        refresh_token = Security.create_refresh_token({"sub": user.id})
+        return Token(access_token, refresh_token)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Could not validate credentials: {str(e)}"
+        )
+
      
 
