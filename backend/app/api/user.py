@@ -80,7 +80,7 @@ async def refresh_access_token(
             detail=f"Could not validate credentials: {str(e)}"
         )
     
-@router.get("/me")
+@router.get("/me", response_model=UserResponse, status_code=status.HTTP_200_OK)
 async def user_info(
     current_user = Depends(get_current_user),
     db: AsyncDatabase = Depends(get_db)
