@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from backend.app.core.security import Security
 from backend.app.schema.auth import LoginRequest, Token
 from backend.app.schema.response import ResponseModel
 from backend.app.schema.user import UserCreate, UserResponse
@@ -30,18 +31,23 @@ async def register_user(
         )
     
 @router.post("/login", response_model=Token, status_code=status.HTTP_200_OK)
-async def login_user(
+async def user_login(
     login_data: LoginRequest,
     db: AsyncDatabase = Depends(get_db)
 ):
     us = UserService(db)
-    user = await us.authenticate_user(
+    user = await us.auth_user(
         login_data.email,
         login_data.password
     )
     if not user:
-        raise HTTPException(
+        return HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
-            headers={"WWW-Authenticate": "Bearer"},
+            detail="Email or password is wrong",
+            headers={"WWW-Authenticate": "Bearer"}
         )
+    access_token = Security.create_access_token({"sub": user.id, "role": user.role})
+    refresh_token = Security.create_refresh_token({"sub": user.id})
+    return Token(access_token, refresh_token)
+     
+
