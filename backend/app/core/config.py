@@ -15,8 +15,8 @@ class Settings(BaseSettings):
     allow_origins: list[str]
     secret_key: str
     algorithm: str
-    access_token_expire_minutes: str
-    refresh_token_expire_days: str
+    access_token_expire_minutes: int
+    refresh_token_expire_days: int
 
     model_config = SettingsConfigDict(env_file=str(ENV_FILE), case_sensitive=False)
 

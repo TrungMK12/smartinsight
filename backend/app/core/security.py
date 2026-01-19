@@ -53,8 +53,8 @@ class Security():
         try:
             payload = jwt.decode(
                 token,
-                settings.SECRET_KEY,
-                algorithms=[settings.ALGORITHM]
+                settings.secret_key,
+                algorithms=settings.algorithm
             )
             return payload
         except PyJWTError as e:

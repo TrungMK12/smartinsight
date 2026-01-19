@@ -48,7 +48,10 @@ async def user_login(
         )
     access_token = Security.create_access_token({"sub": user.id, "role": user.role})
     refresh_token = Security.create_refresh_token({"sub": user.id})
-    return Token(access_token, refresh_token)
+    return Token(
+        access_token=access_token,
+        refresh_token=refresh_token
+    )
 
 @router.post("/refresh", response_model=Token, status_code=status.HTTP_200_OK)
 async def refresh_access_token(
