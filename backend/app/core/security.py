@@ -3,7 +3,8 @@ from datetime import datetime, timedelta
 from backend.app.core.config import settings
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from jwt import jwt, PyJWTError
+import jwt
+from jwt import PyJWTError
 
 security = HTTPBearer()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

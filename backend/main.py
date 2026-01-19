@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.app.api import chat, upload, user
-from backend.app.core import db
+from backend.app.core.database import db
 from contextlib import asynccontextmanager
 from backend.app.core.config import settings
 
