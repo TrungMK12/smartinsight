@@ -1,51 +1,81 @@
-import docx2txt
-import re
+import io
+from typing import List, Dict, Any
 import PyPDF2
+from docx import Document
 
-def extract_text_from_pdf(path: str) -> str:
-    reader = PyPDF2.PdfReader(path)
-    text = ""
-    for page in reader.pages:
-        page_text = page.extract_text()
-        if page_text:
-            text += page_text + "\n"
-    return text
-
-def extract_text_from_docx(path: str) -> str:
-    return docx2txt.process(path)
-
-def extract_text_from_txt(path: str) -> str:
-    with open(path,'r',encoding='utf-8') as f:
-        return f.read()
+class DocumentProcessor:
+    @staticmethod
+    def process_pdf(file_content: bytes) -> str:
+        try:
+            pdf_reader = PyPDF2.PdfReader(io.BytesIO(file_content))
+            text = ""
+            for page in pdf_reader.pages:
+                text += page.extract_text() + "\n\n"
+            return text.strip()
+        except Exception as e:
+            raise ValueError(f"Failed to process PDF: {str(e)}")
     
-def clean_text(mode: str, path: str) -> str:
-    if mode == "pdf":
-        text = extract_text_from_pdf(path)
-    elif mode == "docx":
-        text = extract_text_from_docx(path)
-    elif mode == "txt":
-        text = extract_text_from_txt(path)
-
-    text = re.sub(r'\n{2,}','\n',text)
-    text = re.sub(r'Page\s*\d+\W*\s*\d+','',text,flags=re.IGNORECASE)
-    text = re.sub(r'\s{2,}',' ',text)
-
-    return text
-
-def chunking_text(text: str, chunk_size: int = 100, overlap: int = 20) -> list[str]:
-    chunks = []
-    start = 0
-    text_length = len(text)
+    @staticmethod
+    def process_docx(file_content: bytes) -> str:
+        try:
+            doc = Document(io.BytesIO(file_content))
+            text = ""
+            for paragraph in doc.paragraphs:
+                text += paragraph.text + "\n"
+            return text.strip()
+        except Exception as e:
+            raise ValueError(f"Failed to process DOCX: {str(e)}")
     
-    while start < text_length:
-        end = min(start + chunk_size, text_length)
-        chunk = text[start:end]
-        chunks.append(chunk)
-        
-        if end == text_length:
-            break
-        
-        start += chunk_size - overlap
+    @staticmethod
+    def process_txt(file_content: bytes) -> str:
+        try:
+            return file_content.decode('utf-8').strip()
+        except UnicodeDecodeError:
+            for encoding in ['latin-1', 'cp1252', 'iso-8859-1']:
+                try:
+                    return file_content.decode(encoding).strip()
+                except UnicodeDecodeError:
+                    continue
+            raise ValueError("Failed to decode text file")
     
-    return chunks
+    @staticmethod
+    def chunk_text(
+        text: str,
+        chunk_size: int = 500,
+        chunk_overlap: int = 50
+    ) -> List[str]:
+        if not text:
+            return []
+        chunks = []
+        start = 0
+        text_length = len(text)
+        while start < text_length:
+            end = start + chunk_size
+            if end < text_length:
+                for punct in ['. ', '! ', '? ', '\n\n']:
+                    last_punct = text[start:end].rfind(punct)
+                    if last_punct != -1:
+                        end = start + last_punct + len(punct)
+                        break
+            chunk = text[start:end].strip()
+            if chunk:
+                chunks.append(chunk)
+            start = end - chunk_overlap if end < text_length else text_length
+        return chunks
     
+    @staticmethod
+    def extract_metadata(
+        filename: str,
+        file_size: int,
+        file_type: str,
+        text: str
+    ) -> Dict[str, Any]:
+        words = text.split()
+        return {
+            "filename": filename,
+            "file_size": file_size,
+            "file_type": file_type,
+            "word_count": len(words),
+            "char_count": len(text),
+            "preview": text[:200] + "..." if len(text) > 200 else text
+        }
