@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.app.api import chat, upload, user
+from backend.app.api import chat, document, user
 from backend.app.core.database import db
 from contextlib import asynccontextmanager
 from backend.app.core.config import settings
@@ -36,9 +36,9 @@ app.include_router(
 )
 
 app.include_router(
-    upload.router,
+    document.router,
     prefix="/api",
-    tags=["Upload"]
+    tags=["Document"]
 )
 
 app.include_router(

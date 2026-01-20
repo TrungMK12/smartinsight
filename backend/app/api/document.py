@@ -5,7 +5,7 @@ from backend.app.engine.processor import clean_text, chunking_text
 import os
 
 router = APIRouter(
-    prefix="/upload"
+    prefix="/document"
 )
 
 vb = MiniVectorBase()
@@ -15,7 +15,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 VECTOR_DIR = "backend/data/vectors"
 os.makedirs(VECTOR_DIR, exist_ok=True)
 
-@router.post("/")
+@router.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
     file_type = file.filename.split(".")[-1].lower()
     if file_type not in ["txt", "docx", "pdf"]:
