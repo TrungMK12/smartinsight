@@ -1,7 +1,7 @@
 import numpy as np
 from typing import List, Union
 from sentence_transformers import SentenceTransformer
-from app.core.config import settings
+from backend.app.core.config import settings
 
 class EmbeddingGenerator:
     def __init__(self, model_name: str = None):

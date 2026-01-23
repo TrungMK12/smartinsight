@@ -1,26 +1,21 @@
-from backend.app.core.config import settings
-from sentence_transformers import SentenceTransformer
 import numpy as np
 import json
 
 class MiniVectorBase:
-    def __init__(self, model_name: str = settings.vector_modelname):
-        self.model = SentenceTransformer(model_name)
+    def __init__(self):
         self.vector = None
         self.metadata = []
     
-    def add(self, chunk: str):
-        embedding = self.model.encode(chunk)
+    def add(self, metadata ,embedding: np.array):
         if self.vector is None:
             self.vector = embedding
         else:
             self.vector = np.vstack([self.vector, embedding])
-        self.metadata.append(chunk)
+        self.metadata.append(metadata)
 
-    def search(self, query: str, top_k=3):
+    def search(self, query_vector: np.array, top_k: int = 3):
         if self.vector is None:
             return 
-        query_vector = self.model.encode(query)
         similarity = []
         dot = np.dot(self.vector, query_vector)
         norm_query = np.linalg.norm(query_vector)

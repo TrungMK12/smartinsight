@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from backend.app.engine.llm import LlmOlama
-from backend.app.engine.vector_db import MiniVectorBase
+from mini_vector_db.vector_db import MiniVectorBase
 
 router = APIRouter(
     prefix="/chat"

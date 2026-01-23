@@ -4,10 +4,10 @@ from backend.app.schema.user import UserCreate, UserInDB, UserUpdate
 from backend.app.core.security import Security
 from datetime import datetime
 from pymongo import ReturnDocument
-
+from pymongo.asynchronous.database import AsyncDatabase
 
 class UserService:
-    def __init__(self,db):
+    def __init__(self, db: AsyncDatabase):
         self.db = db
         self.collection = self.db.get_collection("users")
 

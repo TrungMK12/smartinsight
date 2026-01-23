@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     algorithm: str
     access_token_expire_minutes: int
     refresh_token_expire_days: int
+    chunk_size: int
+    chunk_overlap: int
 
     model_config = SettingsConfigDict(env_file=str(ENV_FILE), case_sensitive=False)
 

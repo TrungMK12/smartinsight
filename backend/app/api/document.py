@@ -1,6 +1,6 @@
 import shutil
 from fastapi import APIRouter, UploadFile, File, HTTPException
-from backend.app.engine.vector_db import MiniVectorBase
+from mini_vector_db.vector_db import MiniVectorBase
 from backend.app.engine.processor import clean_text, chunking_text
 import os
 
