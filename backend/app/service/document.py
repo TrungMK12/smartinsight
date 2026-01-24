@@ -1,0 +1,55 @@
+from bson import ObjectId
+from pymongo.asynchronous.database import AsyncDatabase
+from datetime import datetime
+from backend.app.engine.rag import Rag
+from backend.app.schema.document import DocumentCreate, DocumentInDB
+
+class DocumentService:
+    def __init__(self, db: AsyncDatabase):
+        self.rag = Rag()
+        self.db = db
+        self.collection = db.get_collection("documents")
+
+    async def create_document(
+        self,
+        user_id: str,
+        doc_data: DocumentCreate,
+        file_content: bytes
+    ):
+        doc_dict = doc_data.model_dump()
+        doc_dict.update({
+            "user_id": user_id,
+            "chunks": [],
+            "vector_ids": [],
+            "metadata": {},
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        })
+        results = await self.collection.insert_one(doc_dict)
+        document_id = str(results.inserted_id)
+        try:
+            rag_result = await self.rag_engine.process_document(
+                file_content=file_content,
+                filename=doc_data.title,
+                file_type=doc_data.file_type,
+                user_id=user_id,
+                document_id=document_id
+            )
+            await self.collection.update_one(
+                {"_id": ObjectId(document_id)},
+                {
+                    "$set": {
+                        "chunks": rag_result["chunks"],
+                        "vector_ids": rag_result["vector_ids"],
+                        "metadata": rag_result["metadata"]
+                    }
+                }
+            )
+            doc = await self.collection.find_one({"_id": ObjectId(document_id)})
+            doc["_id"] = str(doc["_id"])
+            return DocumentInDB(**doc)
+        except Exception as e:
+            await self.collection.delete_one({"_id": ObjectId(document_id)})
+            raise ValueError(f"Failed to process document: {str(e)}")
+
+
