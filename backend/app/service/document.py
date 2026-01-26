@@ -1,9 +1,10 @@
 from typing import List, Optional
 from bson import ObjectId
+from pymongo import ReturnDocument
 from pymongo.asynchronous.database import AsyncDatabase
 from datetime import datetime
 from backend.app.engine.rag import Rag
-from backend.app.schema.document import DocumentCreate, DocumentInDB
+from backend.app.schema.document import DocumentCreate, DocumentInDB, DocumentUpdate
 
 class DocumentService:
     def __init__(self, db: AsyncDatabase):
@@ -78,5 +79,25 @@ class DocumentService:
             doc["_id"] = str(doc["_id"])
             documents.append(DocumentInDB(**doc))
         return documents
+    
+    async def update_document(
+        self,
+        document_id: str,
+        user_id: str,
+        update_data: DocumentUpdate
+    ) -> Optional[DocumentInDB]:
+        if not ObjectId.is_valid(document_id):
+            return None
+        update_dict = update_data.model_dump(exclude_unset=True)
+        update_dict["updated_at"] = datetime.utcnow()
+        result = await self.collection.find_one_and_update(
+            {"_id": ObjectId(document_id), "user_id": user_id},
+            {"$set": update_dict},
+            return_document=ReturnDocument.AFTER
+        )
+        if result:
+            result["_id"] = str(result["_id"])
+            return DocumentInDB(**result)
+        return None
 
 
