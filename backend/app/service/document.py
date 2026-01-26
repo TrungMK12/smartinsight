@@ -1,3 +1,4 @@
+from typing import List, Optional
 from bson import ObjectId
 from pymongo.asynchronous.database import AsyncDatabase
 from datetime import datetime
@@ -15,7 +16,7 @@ class DocumentService:
         user_id: str,
         doc_data: DocumentCreate,
         file_content: bytes
-    ):
+    ) -> DocumentInDB:
         doc_dict = doc_data.model_dump()
         doc_dict.update({
             "user_id": user_id,
@@ -51,5 +52,31 @@ class DocumentService:
         except Exception as e:
             await self.collection.delete_one({"_id": ObjectId(document_id)})
             raise ValueError(f"Failed to process document: {str(e)}")
+        
+    async def get_document(self, document_id: str, user_id: str) -> Optional[DocumentInDB]:
+        if not ObjectId.is_valid(document_id):
+            return None
+        doc = await self.collection.find_one({
+            "_id": ObjectId(document_id),
+            "user_id": user_id
+        })
+        if doc:
+            doc["_id"] = str(doc["_id"])
+            return DocumentInDB(**doc)
+        return None
+    
+    async def list_user_documents(
+        self,
+        user_id: str,
+        skip: int = 0,
+        limit: int = 20
+    ) -> List[DocumentInDB]:
+        cursor = self.collection.find({"user_id": user_id})
+        cursor = cursor.sort("created_at", -1).skip(skip).limit(limit)
+        documents = []
+        async for doc in cursor:
+            doc["_id"] = str(doc["_id"])
+            documents.append(DocumentInDB(**doc))
+        return documents
 
 
