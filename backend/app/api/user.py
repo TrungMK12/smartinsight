@@ -3,7 +3,7 @@ from backend.app.core.security import Security, get_current_user
 from backend.app.schema.auth import LoginRequest, Token
 from backend.app.schema.response import ResponseModel
 from backend.app.schema.user import UserCreate, UserResponse
-from backend.app.service.user import UserService
+from backend.app.service.user_service import UserService
 from backend.app.core.database import get_db
 from pymongo.asynchronous.database import AsyncDatabase
 

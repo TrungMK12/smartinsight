@@ -1,3 +1,4 @@
+from typing import Any, Dict, List
 import numpy as np
 import json
 
@@ -6,7 +7,7 @@ class MiniVectorBase:
         self.vector = None
         self.metadata = []
     
-    def add(self, metadata ,embedding: np.array):
+    def add(self, embedding: np.array, metadata: List[Dict[str, Any]]):
         if self.vector is None:
             self.vector = embedding
         else:

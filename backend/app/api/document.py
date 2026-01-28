@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Form, UploadFile, File, HTTPException, s
 from backend.app.core.config import settings
 from backend.app.core.database import get_db
 from backend.app.core.security import get_current_user, sanitize_input
-from backend.app.schema.document import DocumentCreate, DocumentResponse
+from backend.app.schema.document import DocumentCreate, DocumentResponse, DocumentUpdate
 from backend.app.schema.response import PaginatedResponse, ResponseModel
 from backend.app.service.document_service import DocumentService
 from mini_vector_db.vector_db import MiniVectorBase
@@ -108,3 +108,27 @@ async def get_document(
             detail="Document not found"
         )
     return DocumentResponse(**document.model_dump())
+
+@router.patch("/{document_id}")
+async def update_document(
+    document_id: str,
+    update_data: DocumentUpdate,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncDatabase = Depends(get_db)
+):
+    document_service = DocumentService(db)
+    document = await document_service.update_document(
+        document_id=document_id,
+        user_id=current_user["sub"],
+        update_data=update_data
+    )
+    if not document:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found"
+        )
+    return ResponseModel(
+        success=True,
+        message="Document update successfully",
+        data=DocumentResponse(**document.model_dump())
+    )

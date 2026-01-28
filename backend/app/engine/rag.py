@@ -44,7 +44,7 @@ class Rag:
             }
             for i, chunk in enumerate(chunks)
         ]
-        vector_id = self.vector_database.add(
+        vector_ids = self.vector_database.add(
             embedding=embedding,
             metadata=metadata
         )
