@@ -100,4 +100,19 @@ class DocumentService:
             return DocumentInDB(**result)
         return None
 
+    async def delete_document(self, document_id: str, user_id: str) -> bool:
+        if not ObjectId.is_valid(document_id):
+            return False
+        doc = await self.get_document(document_id, user_id)
+        if not doc:
+            return False
+        await self.rag_engine.delete_document_vectors(document_id)
+        result = await self.collection.delete_one({
+            "_id": ObjectId(document_id),
+            "user_id": user_id
+        })
+        return result.deleted_count > 0
+    
+    async def count_user_documents(self, user_id: str) -> int:
+        return await self.collection.count_documents({"user_id": user_id})
 
