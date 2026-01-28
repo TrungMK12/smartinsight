@@ -4,7 +4,7 @@ from backend.app.core.database import get_db
 from backend.app.core.security import get_current_user, sanitize_input
 from backend.app.schema.document import DocumentCreate, DocumentResponse
 from backend.app.schema.response import PaginatedResponse, ResponseModel
-from backend.app.service.document import DocumentService
+from backend.app.service.document_service import DocumentService
 from mini_vector_db.vector_db import MiniVectorBase
 from pymongo.asynchronous.database import AsyncDatabase
 import os
@@ -90,3 +90,21 @@ async def list_documents(
         page_size=limit,
         total_pages=(total + limit - 1) // limit
     )
+
+@router.get("/{document_id}", response_model=DocumentResponse)
+async def get_document(
+    document_id: str,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncDatabase = Depends(get_db)
+):
+    document_service = DocumentService(db)
+    document = await document_service.get_document(
+        document_id=document_id,
+        user_id=current_user["sub"]
+    )
+    if not document:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found"
+        )
+    return DocumentResponse(**document.model_dump())
