@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.app.api import chat, document, user
+from backend.app.api import chats, documents, users
 from backend.app.core.database import db
 from contextlib import asynccontextmanager
 from backend.app.core.config import settings
@@ -30,19 +30,19 @@ def root():
     return {"message": "Welcome to SmartInsight API"}
 
 app.include_router(
-    user.router,
+    users.router,
     prefix="/api",
     tags=["User"]
 )
 
 app.include_router(
-    document.router,
+    documents.router,
     prefix="/api",
     tags=["Document"]
 )
 
 app.include_router(
-    chat.router,
+    chats.router,
     prefix="/api",
     tags=["Chat"]
 )
