@@ -132,3 +132,24 @@ async def update_document(
         message="Document update successfully",
         data=DocumentResponse(**document.model_dump())
     )
+
+@router.delete("/{document_id}", response_model=ResponseModel)
+async def delete_document(
+    document_id: str,
+    current_user: dict = Depends(get_current_user),
+    db: AsyncDatabase = Depends(get_db)
+):
+    document_service = DocumentService(db)
+    success = await document_service.delete_document(
+        document_id=document_id,
+        user_id=current_user["sub"]
+    )
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found"
+        )
+    return ResponseModel(
+        success=True,
+        message="Document deleted successfully"
+    )
