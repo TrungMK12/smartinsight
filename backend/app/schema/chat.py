@@ -36,6 +36,7 @@ class ChatHistoryInDB(BaseModel):
     messages: List[ChatMessage]
     created_at: datetime
     updated_at: datetime
+    
     class Config:
         populate_by_name = True
         json_encoders = {ObjectId: str}
