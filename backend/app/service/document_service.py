@@ -3,12 +3,12 @@ from bson import ObjectId
 from pymongo import ReturnDocument
 from pymongo.asynchronous.database import AsyncDatabase
 from datetime import datetime
-from backend.app.engine.rag import Rag
+from backend.app.engine.rag import get_rag_engine
 from backend.app.schema.document import DocumentCreate, DocumentInDB, DocumentUpdate
 
 class DocumentService:
     def __init__(self, db: AsyncDatabase):
-        self.rag = Rag()
+        self.rag_engine = get_rag_engine()
         self.db = db
         self.collection = db.get_collection("documents")
 

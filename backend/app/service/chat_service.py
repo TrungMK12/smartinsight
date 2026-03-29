@@ -1,8 +1,9 @@
 from datetime import datetime
 from typing import List, Optional
-import uuid
 from pymongo.asynchronous.database import AsyncDatabase
 from backend.app.schema.chat import ChatHistoryInDB, ChatRequest, ChatResponse, ChatMessage
+from backend.app.engine.rag import get_rag_engine
+import uuid
 
 class ChatService:
     def __init__(self, db: AsyncDatabase):

@@ -5,7 +5,7 @@ from backend.app.core.security import get_current_user, sanitize_input
 from backend.app.schema.document import DocumentCreate, DocumentResponse, DocumentUpdate
 from backend.app.schema.response import PaginatedResponse, ResponseModel
 from backend.app.service.document_service import DocumentService
-from mini_vector_db.vector_db import MiniVectorBase
+from backend.app.mini_vector_db.vector_db import MiniVectorBase
 from pymongo.asynchronous.database import AsyncDatabase
 import os
 
@@ -29,16 +29,16 @@ async def upload_document(
     db: AsyncDatabase = Depends(get_db)
 ):
     file_ext = file.filename.split(".")[-1].lower()
-    if file_ext not in settings.ALLOWED_EXTENSIONS:
+    if file_ext not in settings.allowed_extensions:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"File type not allowed. Allowed types: {', '.join(settings.ALLOWED_EXTENSIONS)}"
+            detail=f"File type not allowed. Allowed types: {', '.join(settings.allowed_extensions)}"
         )
     file_content = await file.read()
-    if len(file_content) > settings.MAX_UPLOAD_SIZE:
+    if len(file_content) > settings.max_upload_size:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail=f"File too large. Maximum size: {settings.MAX_UPLOAD_SIZE / 1024 / 1024}MB"
+            detail=f"File too large. Maximum size: {settings.max_upload_size / 1024 / 1024}MB"
         )
     doc_title = sanitize_input(title) if title else file.filename
     doc_description = sanitize_input(description) if description else None

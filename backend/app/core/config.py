@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     refresh_token_expire_days: int
     chunk_size: int
     chunk_overlap: int
+    allowed_extensions: list[str]
+    max_upload_size: int
+    vector_db_path: str
+    vector_dimension: int
 
     model_config = SettingsConfigDict(env_file=str(ENV_FILE), case_sensitive=False)
 
