@@ -9,11 +9,12 @@ from backend.app.mini_vector_db.vector_db import MiniVectorBase
 
 class RAGEngine:
     def __init__(self) -> None:
+        self.embedding_generator = get_embedding_generator()
+        dimension = settings.vector_dimension or self.embedding_generator.get_dimension()
         self.vector_db = MiniVectorBase(
             storage_path=settings.vector_db_path,
-            dimension=settings.vector_dimension,
+            dimension=dimension,
         )
-        self.embedding_generator = get_embedding_generator()
         self.document_processor = DocumentProcessor()
 
     # ------------------------------------------------------------------ #

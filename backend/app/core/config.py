@@ -16,7 +16,8 @@ class Settings(BaseSettings):
 
     # --- Embedding ---
     vector_modelname: str
-    vector_dimension: int
+    # Nếu bỏ trống, dimension sẽ được lấy tự động từ embedding model
+    vector_dimension: int | None = None
 
     # --- Vector store ---
     vector_db_path: str = "backend/data/vectors"
