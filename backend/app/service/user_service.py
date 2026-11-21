@@ -67,8 +67,7 @@ class UserService:
         return None
     
     async def auth_user(self, email: str, password: str) -> Optional[UserInDB]:
-        if email:
-            user = await self.get_user_by_email(email)
+        user = await self.get_user_by_email(email) if email else None
         if not user:
             return None
         if not Security.verify_password(password, user.hashed_password):
