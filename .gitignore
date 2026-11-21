@@ -35,12 +35,23 @@ env/
 # Project specific
 *.log
 .env
+.env.*
+!.env.example
 
 __pycache__/
 *.pyc
 .venv/
 env/
 
-test.py
-vectors/
-uploads/
+# Test / tooling caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Local data (uploads & vector store)
+backend/data/uploads/*
+backend/data/vectors/*
+!backend/data/uploads/.gitkeep
+!backend/data/vectors/.gitkeep
