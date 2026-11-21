@@ -1,16 +1,16 @@
 import io
 from typing import List, Dict, Any
-import PyPDF2
+from pypdf import PdfReader
 from docx import Document
 
 class DocumentProcessor:
     @staticmethod
     def process_pdf(file_content: bytes) -> str:
         try:
-            pdf_reader = PyPDF2.PdfReader(io.BytesIO(file_content))
+            pdf_reader = PdfReader(io.BytesIO(file_content))
             text = ""
             for page in pdf_reader.pages:
-                text += page.extract_text() + "\n\n"
+                text += (page.extract_text() or "") + "\n\n"
             return text.strip()
         except Exception as e:
             raise ValueError(f"Failed to process PDF: {str(e)}")
