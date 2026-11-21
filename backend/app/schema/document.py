@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, Field
 from typing import Optional, Dict, Any, List
 from datetime import datetime
 from bson import ObjectId
@@ -18,7 +18,7 @@ class DocumentUpdate(BaseModel):
     description: Optional[str] = None
 
 class DocumentInDB(DocumentBase):
-    id: str = Field(alias="_id")
+    id: str = Field(validation_alias=AliasChoices("_id", "id"))
     user_id: str
     content: str = ""
     chunks: List[str] = []
@@ -37,7 +37,7 @@ class DocumentInDB(DocumentBase):
         json_encoders = {ObjectId: str}
 
 class DocumentResponse(DocumentBase):
-    id: str = Field(alias="_id")
+    id: str = Field(validation_alias=AliasChoices("_id", "id"))
     user_id: str
     status: str = "ready"
     chunk_count: int = 0

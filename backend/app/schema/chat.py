@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional
 from bson import ObjectId
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, Field
 from datetime import datetime
 
 class ChatMessage(BaseModel):
@@ -30,7 +30,7 @@ class SummarizeResponse(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
 class ChatHistoryInDB(BaseModel):
-    id: str = Field(alias="_id")
+    id: str = Field(validation_alias=AliasChoices("_id", "id"))
     user_id: str
     session_id: str
     messages: List[ChatMessage]

@@ -1,7 +1,7 @@
 from typing import Optional
 from datetime import datetime
 from bson import ObjectId
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import AliasChoices, BaseModel, EmailStr, Field, field_validator
 
 class UserBase(BaseModel):
     username: str = Field(..., min_length=5, max_length=20)
@@ -11,7 +11,7 @@ class UserBase(BaseModel):
     role: str = "user"
 
 class UserCreate(UserBase):
-    password: str
+    password: str = Field(..., min_length=8, max_length=72)
 
     @field_validator("password")
     @classmethod
@@ -28,7 +28,7 @@ class UserUpdate(BaseModel):
     password: Optional[str] = None
     
 class UserInDB(UserBase):
-    id: str = Field(alias="_id")
+    id: str = Field(validation_alias=AliasChoices("_id", "id"))
     hashed_password: str
     created_at: datetime
     updated_at: datetime
@@ -38,7 +38,7 @@ class UserInDB(UserBase):
         json_encoders = {ObjectId: str}
         
 class UserResponse(UserBase):
-    id: str = Field(alias="_id")
+    id: str = Field(validation_alias=AliasChoices("_id", "id"))
     created_at: datetime
 
     class Config:

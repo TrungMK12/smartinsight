@@ -1,25 +1,34 @@
 from datetime import datetime, timedelta, timezone
 
+import bcrypt
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt import PyJWTError
-from passlib.context import CryptContext
 
 from backend.app.core.config import settings
 
 security = HTTPBearer()
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# bcrypt chỉ xử lý tối đa 72 byte
+BCRYPT_MAX_BYTES = 72
 
 
 class Security:
     @staticmethod
     def get_password_hash(password: str) -> str:
-        return pwd_context.hash(password)
+        password_bytes = password.encode("utf-8")[:BCRYPT_MAX_BYTES]
+        return bcrypt.hashpw(password_bytes, bcrypt.gensalt()).decode("utf-8")
 
     @staticmethod
     def verify_password(plain_password: str, hash_password: str) -> bool:
-        return pwd_context.verify(plain_password, hash_password)
+        try:
+            return bcrypt.checkpw(
+                plain_password.encode("utf-8")[:BCRYPT_MAX_BYTES],
+                hash_password.encode("utf-8"),
+            )
+        except (ValueError, TypeError):
+            return False
 
     @staticmethod
     def create_access_token(data: dict) -> str:
