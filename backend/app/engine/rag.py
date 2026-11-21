@@ -1,10 +1,17 @@
 import asyncio
+import logging
 from typing import Any, Dict, List, Optional
 
 from backend.app.core.config import settings
 from backend.app.engine.embedding import get_embedding_generator
+from backend.app.engine.llm import LLMError, get_llm
 from backend.app.engine.processor import DocumentProcessor
 from backend.app.mini_vector_db.vector_db import MiniVectorBase
+
+logger = logging.getLogger(__name__)
+
+# Giới hạn ký tự đưa vào một lần gọi LLM khi tóm tắt
+MAX_SUMMARY_INPUT_CHARS = 8000
 
 
 class RAGEngine:
@@ -110,6 +117,16 @@ class RAGEngine:
             ]
         return results[:top_k]
 
+    async def rewrite_query(
+        self,
+        query: str,
+        chat_history: Optional[List[Dict[str, str]]] = None,
+    ) -> str:
+        return await get_llm().rewrite_query(query, chat_history)
+
+    # ------------------------------------------------------------------ #
+    # Answer generation
+    # ------------------------------------------------------------------ #
     async def generate_answer(
         self,
         query: str,
@@ -125,7 +142,6 @@ class RAGEngine:
                 "confidence": 0.0,
             }
 
-        answer = self._generate_simple_answer(query, context)
         sources = [
             {
                 "document_id": item["metadata"]["document_id"],
@@ -136,6 +152,18 @@ class RAGEngine:
             }
             for item in context
         ]
+
+        context_chunks = [
+            item["metadata"]["chunk_text"] for item in context
+        ]
+        try:
+            answer = await get_llm().generate_rag(query, context_chunks)
+        except LLMError:
+            logger.warning(
+                "LLM không khả dụng, dùng câu trả lời trích xuất", exc_info=True
+            )
+            answer = self._generate_simple_answer(query, context)
+
         return {
             "answer": answer,
             "sources": sources,
@@ -170,26 +198,60 @@ class RAGEngine:
         user_id: str,
         max_length: int = 500,
     ) -> str:
-        sample_query = "overview summary content"
-        query_embedding = await asyncio.to_thread(
-            self.embedding_generator.encode_query, sample_query
-        )
-        results = await asyncio.to_thread(
-            self.vector_db.search,
-            query_embedding,
-            10,
+        chunks = await asyncio.to_thread(
+            self.vector_db.get_metadata_where,
             {"document_id": document_id, "user_id": user_id},
         )
-        if not results:
+        if not chunks:
             raise ValueError("Document not found or access denied")
 
-        all_text = " ".join(
-            r["metadata"]["chunk_text"]
-            for r in sorted(
-                results, key=lambda x: x["metadata"]["chunk_index"]
+        ordered = sorted(chunks, key=lambda m: m.get("chunk_index", 0))
+        full_text = "\n\n".join(m.get("chunk_text", "") for m in ordered)
+
+        try:
+            return await self._summarize_with_llm(full_text, max_length)
+        except LLMError:
+            logger.warning(
+                "LLM không khả dụng, dùng tóm tắt trích xuất", exc_info=True
             )
+            return self._generate_simple_summary(full_text, max_length)
+
+    async def _summarize_with_llm(self, text: str, max_length: int) -> str:
+        llm = get_llm()
+        if len(text) <= MAX_SUMMARY_INPUT_CHARS:
+            return await self._summarize_chunk(llm, text, max_length)
+
+        parts = [
+            text[i : i + MAX_SUMMARY_INPUT_CHARS]
+            for i in range(0, len(text), MAX_SUMMARY_INPUT_CHARS)
+        ]
+        per_part = max(150, max_length // len(parts))
+        partials = [
+            await self._summarize_chunk(llm, part, per_part) for part in parts
+        ]
+        return await self._summarize_chunk(
+            llm, "\n\n".join(partials), max_length
         )
-        return self._generate_simple_summary(all_text, max_length)
+
+    async def _summarize_chunk(self, llm, text: str, max_length: int) -> str:
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "Bạn là trợ lý tóm tắt tài liệu. Chỉ sử dụng thông tin "
+                    "trong văn bản được cung cấp, trả lời bằng tiếng Việt."
+                ),
+            },
+            {
+                "role": "user",
+                "content": (
+                    f"Tóm tắt văn bản sau trong tối đa {max_length} ký tự. "
+                    "Nêu các ý chính, không thêm thông tin ngoài văn bản.\n\n"
+                    f"{text}"
+                ),
+            },
+        ]
+        return await llm.chat(messages)
 
     def _generate_simple_summary(self, text: str, max_length: int) -> str:
         summary = ""

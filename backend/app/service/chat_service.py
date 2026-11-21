@@ -17,8 +17,16 @@ class ChatService:
         chat_request: ChatRequest
     ) -> ChatResponse:
         session_id = chat_request.session_id or str(uuid.uuid4())
+
+        history = await self._get_recent_messages(
+            user_id=user_id, session_id=session_id
+        )
+        rewritten_query = await self.rag_engine.rewrite_query(
+            chat_request.query, history
+        )
+
         context = await self.rag_engine.retrieve_context(
-            query=chat_request.query,
+            query=rewritten_query,
             top_k=chat_request.max_docs,
             user_id=user_id,
             document_ids=chat_request.document_ids
@@ -41,6 +49,24 @@ class ChatService:
             session_id=session_id,
             timestamp=datetime.utcnow()
         )
+
+    async def _get_recent_messages(
+        self,
+        user_id: str,
+        session_id: str,
+        limit: int = 6
+    ) -> List[dict]:
+        session = await self.collection.find_one({
+            "user_id": user_id,
+            "session_id": session_id
+        })
+        if not session:
+            return []
+        recent = session.get("messages", [])[-limit:]
+        return [
+            {"role": m.get("role"), "content": m.get("content")}
+            for m in recent
+        ]
     
     async def summarize_document(
         self,

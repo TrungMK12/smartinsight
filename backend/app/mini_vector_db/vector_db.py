@@ -187,6 +187,17 @@ class MiniVectorBase:
                 )
             return results
 
+    def get_metadata_where(
+        self, filter_metadata: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
+        """Trả về bản copy metadata của mọi vector khớp filter."""
+        with self._lock:
+            return [
+                dict(metadata)
+                for metadata in self.metadata_store.values()
+                if self._matches(metadata, filter_metadata)
+            ]
+
     def get_stats(self) -> Dict[str, Any]:
         with self._lock:
             per_user: Dict[str, int] = {}
