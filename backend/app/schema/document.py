@@ -20,10 +20,15 @@ class DocumentUpdate(BaseModel):
 class DocumentInDB(DocumentBase):
     id: str = Field(alias="_id")
     user_id: str
-    content: str
+    content: str = ""
     chunks: List[str] = []
     vector_ids: List[str] = []  
     metadata: Dict[str, Any] = {}
+    file_path: Optional[str] = None
+    checksum: Optional[str] = None
+    status: str = "ready"
+    chunk_count: int = 0
+    error_message: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     
@@ -34,6 +39,9 @@ class DocumentInDB(DocumentBase):
 class DocumentResponse(DocumentBase):
     id: str = Field(alias="_id")
     user_id: str
+    status: str = "ready"
+    chunk_count: int = 0
+    error_message: Optional[str] = None
     created_at: datetime
     
     class Config:

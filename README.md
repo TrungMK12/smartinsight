@@ -11,7 +11,7 @@ Hệ thống **hỏi–đáp tài liệu cá nhân** (RAG — Retrieval-Augmente
 | Nhóm | Chức năng |
 |---|---|
 | Xác thực | Đăng ký, đăng nhập, refresh token, thông tin cá nhân. JWT access + refresh, mật khẩu hash bcrypt. |
-| Tài liệu | Upload (giới hạn loại file & dung lượng), danh sách có phân trang, xem chi tiết, sửa, xoá (kèm xoá vector). |
+| Tài liệu | Upload (giới hạn loại file & dung lượng, chống trùng theo SHA-256), xử lý RAG chạy nền với trạng thái `pending/processing/ready/failed`, danh sách có phân trang, xem chi tiết, sửa, xoá (kèm file + vector), xử lý lại (reindex). |
 | Hỏi–đáp | Hỏi trên toàn bộ tài liệu hoặc giới hạn theo `document_ids`, trả về câu trả lời + danh sách nguồn (file, chunk, similarity). |
 | Tóm tắt | Tóm tắt một tài liệu với độ dài tuỳ chọn. |
 | Lịch sử | Lưu hội thoại theo `session_id`, xem và xoá phiên chat. |
@@ -143,11 +143,14 @@ Tất cả endpoint (trừ auth) yêu cầu header `Authorization: Bearer <acces
 
 | Method | Path | Mô tả |
 |---|---|---|
-| POST | `/upload` | Upload + xử lý RAG (`multipart/form-data`) |
+| POST | `/upload` | Upload file, trả **202** ngay và xử lý RAG ở background (`multipart/form-data`) |
 | GET | `/` | Danh sách (phân trang `skip`, `limit`) |
-| GET | `/{document_id}` | Chi tiết tài liệu |
+| GET | `/{document_id}` | Chi tiết tài liệu (kèm `status`, `chunk_count`, `error_message`) |
 | PATCH | `/{document_id}` | Sửa `title` / `description` |
-| DELETE | `/{document_id}` | Xoá tài liệu + vector |
+| POST | `/{document_id}/reindex` | Xoá vector cũ và xử lý lại tài liệu (202) |
+| DELETE | `/{document_id}` | Xoá tài liệu + file gốc + vector |
+
+Trạng thái tài liệu: `pending` → `processing` → `ready` (hoặc `failed` kèm `error_message`).
 
 ### Chat — `/api/chat`
 
@@ -189,17 +192,17 @@ curl -X POST http://localhost:8000/api/chat/query \
 1. **Vector store chạy in-process** → bắt buộc `uvicorn --workers 1`. Muốn scale ngang phải chuyển sang Qdrant/Chroma.
 2. Embedding chạy trên CPU → upload tài liệu lớn sẽ chậm.
 3. Câu trả lời phụ thuộc chất lượng model Ollama; prompt đã ràng buộc "chỉ trả lời từ ngữ cảnh".
-4. Chưa có rate limiting, chưa lưu file gốc (mới lưu metadata + chunk).
+4. Chưa có rate limiting.
 
 ---
 
 ## Roadmap
 
 - [x] Phase 0 — Nền tảng repo (deps, env template, README)
-- [ ] Phase 1 — Sửa lỗi chặn khởi động
-- [ ] Phase 2 — Vector store hoàn chỉnh + persist
-- [ ] Phase 3 — RAG + LLM thật
-- [ ] Phase 4 — Pipeline tài liệu (lưu file, background job, re-index)
+- [x] Phase 1 — Sửa lỗi chặn khởi động
+- [x] Phase 2 — Vector store hoàn chỉnh + persist
+- [x] Phase 3 — RAG + LLM thật
+- [x] Phase 4 — Pipeline tài liệu (lưu file, background job, re-index)
 - [ ] Phase 5 — Hardening API (error handler, rate limit, logging)
 - [ ] Phase 6 — Test & CI
 - [ ] Phase 7 — Frontend (Next.js)
