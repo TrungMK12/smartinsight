@@ -11,7 +11,7 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     query: str = Field(..., min_length=1, max_length=2000)
     session_id: Optional[str] = None
-    document_ids: Optional[List[str]] = []
+    document_ids: Optional[List[str]] = Field(default_factory=list)
     max_docs: int = Field(default=5, ge=1, le=10)
 
 class ChatResponse(BaseModel):

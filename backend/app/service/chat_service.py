@@ -8,7 +8,7 @@ import uuid
 class ChatService:
     def __init__(self, db: AsyncDatabase):
         self.db = db 
-        self.collections = self.db.get_collection("chats")
+        self.collection = self.db.get_collection("chats")
         self.rag_engine = get_rag_engine()
 
     async def process_query(

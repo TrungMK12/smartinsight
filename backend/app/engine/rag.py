@@ -7,8 +7,8 @@ from backend.app.mini_vector_db.vector_db import MiniVectorBase
 class RAGEngine: 
     def __init__(self):
         self.vector_db = MiniVectorBase(
-            storage_path=settings.vector_,
-            dimension=settings.VECTOR_DIMENSION
+            storage_path=settings.vector_db_path,
+            dimension=settings.vector_dimension
         )
         self.embedding_generator = get_embedding_generator()
         self.document_processor = DocumentProcessor()
@@ -33,8 +33,8 @@ class RAGEngine:
             raise ValueError(f"Unsupported file type: {file_type}")      
         chunks = self.document_processor.chunk_text(
             text,
-            chunk_size=settings.CHUNK_SIZE,
-            chunk_overlap=settings.CHUNK_OVERLAP
+            chunk_size=settings.chunk_size,
+            chunk_overlap=settings.chunk_overlap
         )
         if not chunks:
             raise ValueError("No text content extracted from document")

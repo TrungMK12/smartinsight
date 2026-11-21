@@ -5,15 +5,12 @@ from backend.app.core.security import get_current_user, sanitize_input
 from backend.app.schema.document import DocumentCreate, DocumentResponse, DocumentUpdate
 from backend.app.schema.response import PaginatedResponse, ResponseModel
 from backend.app.service.document_service import DocumentService
-from backend.app.mini_vector_db.vector_db import MiniVectorBase
 from pymongo.asynchronous.database import AsyncDatabase
 import os
 
 router = APIRouter(
     prefix="/document"
 )
-
-vb = MiniVectorBase()
 
 UPLOAD_DIR = "backend/data/uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
