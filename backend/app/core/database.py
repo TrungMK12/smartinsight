@@ -10,10 +10,16 @@ class Database:
 
     async def connect(self):
         try:
-            self.client = AsyncMongoClient(settings.database_url)
+            self.client = AsyncMongoClient(
+                settings.database_url,
+                serverSelectionTimeoutMS=settings.mongo_timeout_ms,
+            )
             self.database = self.client.get_database(settings.database_name)
         except Exception as e:
-            raise Exception("Unable to connect to the database due to the following error: ", e)
+            raise Exception(
+                "Unable to connect to the database due to the following error: "
+                f"{e}"
+            )
         
     async def close(self):
         if self.client:

@@ -10,11 +10,12 @@ from pymongo import ReturnDocument
 from pymongo.asynchronous.database import AsyncDatabase
 
 from backend.app.core.config import settings
+from backend.app.core.errors import BadRequestError, DuplicateError
 from backend.app.engine.rag import get_rag_engine
 from backend.app.schema.document import DocumentCreate, DocumentInDB, DocumentUpdate
 
 
-class DuplicateDocumentError(ValueError):
+class DuplicateDocumentError(DuplicateError):
     """Người dùng đã upload đúng file này trước đó."""
 
 
@@ -30,7 +31,7 @@ class DocumentService:
     async def create_document(
         self,
         user_id: str,
-        doc_data: DocumentCreate,
+        document_data: DocumentCreate,
         file_content: bytes,
     ) -> DocumentInDB:
         checksum = hashlib.sha256(file_content).hexdigest()
@@ -42,11 +43,11 @@ class DocumentService:
                 f"Tài liệu đã tồn tại (id={existing['_id']})"
             )
 
-        file_path = self._build_file_path(user_id, doc_data.file_type)
+        file_path = self._build_file_path(user_id, document_data.file_type)
         await asyncio.to_thread(self._write_file, file_path, file_content)
 
         now = datetime.utcnow()
-        doc_dict = doc_data.model_dump()
+        doc_dict = document_data.model_dump()
         doc_dict.update(
             {
                 "user_id": user_id,
@@ -123,7 +124,7 @@ class DocumentService:
         if not doc.file_path or not await asyncio.to_thread(
             Path(doc.file_path).exists
         ):
-            raise ValueError("Không tìm thấy file gốc để xử lý lại")
+            raise BadRequestError("Không tìm thấy file gốc để xử lý lại")
 
         await self.rag_engine.delete_document_vectors(document_id)
         await self.collection.update_one(

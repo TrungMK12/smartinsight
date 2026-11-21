@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     # --- Database ---
     database_url: str
     database_name: str
+    mongo_timeout_ms: int = 5000
 
     # --- Auth ---
     secret_key: str

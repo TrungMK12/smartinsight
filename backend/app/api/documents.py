@@ -5,6 +5,7 @@ from fastapi import (
     File,
     Form,
     HTTPException,
+    Request,
     UploadFile,
     status,
 )
@@ -12,6 +13,7 @@ from pymongo.asynchronous.database import AsyncDatabase
 
 from backend.app.core.config import settings
 from backend.app.core.database import get_db
+from backend.app.core.rate_limit import limiter
 from backend.app.core.security import get_current_user, sanitize_input
 from backend.app.schema.document import (
     DocumentCreate,
@@ -19,10 +21,7 @@ from backend.app.schema.document import (
     DocumentUpdate,
 )
 from backend.app.schema.response import PaginatedResponse, ResponseModel
-from backend.app.service.document_service import (
-    DocumentService,
-    DuplicateDocumentError,
-)
+from backend.app.service.document_service import DocumentService
 
 router = APIRouter(prefix="/document")
 
@@ -32,7 +31,9 @@ router = APIRouter(prefix="/document")
     response_model=ResponseModel,
     status_code=status.HTTP_202_ACCEPTED,
 )
+@limiter.limit("10/minute")
 async def upload_document(
+    request: Request,
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     title: str = Form(None),
@@ -77,17 +78,11 @@ async def upload_document(
     )
 
     document_service = DocumentService(db)
-    try:
-        document = await document_service.create_document(
-            user_id=current_user["sub"],
-            document_data=document_data,
-            file_content=file_content,
-        )
-    except DuplicateDocumentError as e:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=str(e),
-        )
+    document = await document_service.create_document(
+        user_id=current_user["sub"],
+        document_data=document_data,
+        file_content=file_content,
+    )
 
     background_tasks.add_task(
         document_service.process_document,
@@ -131,23 +126,19 @@ async def list_documents(
     response_model=ResponseModel,
     status_code=status.HTTP_202_ACCEPTED,
 )
+@limiter.limit("5/minute")
 async def reindex_document(
+    request: Request,
     document_id: str,
     background_tasks: BackgroundTasks,
     current_user: dict = Depends(get_current_user),
     db: AsyncDatabase = Depends(get_db),
 ):
     document_service = DocumentService(db)
-    try:
-        document = await document_service.prepare_reindex(
-            document_id=document_id,
-            user_id=current_user["sub"],
-        )
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
+    document = await document_service.prepare_reindex(
+        document_id=document_id,
+        user_id=current_user["sub"],
+    )
     if not document:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

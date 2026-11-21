@@ -16,6 +16,7 @@ Hệ thống **hỏi–đáp tài liệu cá nhân** (RAG — Retrieval-Augmente
 | Tóm tắt | Tóm tắt một tài liệu với độ dài tuỳ chọn. |
 | Lịch sử | Lưu hội thoại theo `session_id`, xem và xoá phiên chat. |
 | Cách ly dữ liệu | Mọi truy vấn vector đều lọc theo `user_id` — người dùng không thấy dữ liệu của nhau. |
+| Vận hành | Rate limit theo IP, log có `X-Request-ID` + thời gian xử lý, lỗi JSON nhất quán, `/health` kiểm tra Mongo/vector store/Ollama. |
 
 ---
 
@@ -97,7 +98,7 @@ uvicorn backend.main:app --reload
 ```
 
 - Swagger UI: <http://localhost:8000/docs>
-- Health check: <http://localhost:8000/health>
+- Health check: <http://localhost:8000/health> — trả `200` khi Mongo OK, `503` khi mất kết nối; body gồm trạng thái Mongo/vector store/Ollama.
 
 > **Lần chạy đầu tiên** sẽ tải embedding model (~470 MB) nên khởi động chậm.
 
@@ -115,6 +116,7 @@ uvicorn backend.main:app --reload
 | `VECTOR_DB_PATH` | `backend/data/vectors` | nơi lưu vector store |
 | `DATABASE_URL` | `mongodb://localhost:27017` | MongoDB URI |
 | `DATABASE_NAME` | `smartinsight` | tên database |
+| `MONGO_TIMEOUT_MS` | `5000` | timeout chọn server Mongo (ms) |
 | `SECRET_KEY` | chuỗi random dài | ký JWT |
 | `ALGORITHM` | `HS256` | thuật toán JWT |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `30` | hạn access token |
@@ -129,6 +131,14 @@ uvicorn backend.main:app --reload
 ## API
 
 Tất cả endpoint (trừ auth) yêu cầu header `Authorization: Bearer <access_token>`.
+
+**Định dạng lỗi** (thống nhất cho mọi lỗi nghiệp vụ):
+
+```json
+{ "success": false, "detail": "Tài liệu đã tồn tại (id=...)", "error_code": "duplicate" }
+```
+
+**Rate limit** (theo IP, cửa sổ 1 phút): register 5, login 10, refresh 20, upload 10, reindex 5, chat query 30, summarize 10. Vượt hạn mức trả `429` với `error_code: "rate_limited"`.
 
 ### User — `/api/user`
 
@@ -203,7 +213,7 @@ curl -X POST http://localhost:8000/api/chat/query \
 - [x] Phase 2 — Vector store hoàn chỉnh + persist
 - [x] Phase 3 — RAG + LLM thật
 - [x] Phase 4 — Pipeline tài liệu (lưu file, background job, re-index)
-- [ ] Phase 5 — Hardening API (error handler, rate limit, logging)
+- [x] Phase 5 — Hardening API (error handler, rate limit, logging)
 - [ ] Phase 6 — Test & CI
 - [ ] Phase 7 — Frontend (Next.js)
 - [ ] Phase 8 — Docker & deploy

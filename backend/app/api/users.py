@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pymongo.asynchronous.database import AsyncDatabase
 
 from backend.app.core.database import get_db
+from backend.app.core.rate_limit import limiter
 from backend.app.core.security import Security, get_current_user
 from backend.app.schema.auth import LoginRequest, RefreshRequest, Token
 from backend.app.schema.response import ResponseModel
@@ -16,18 +17,14 @@ router = APIRouter(prefix="/user")
     response_model=ResponseModel,
     status_code=status.HTTP_201_CREATED,
 )
+@limiter.limit("5/minute")
 async def register_user(
+    request: Request,
     user_data: UserCreate,
     db: AsyncDatabase = Depends(get_db),
 ):
     user_service = UserService(db)
-    try:
-        user = await user_service.create_user(user_data)
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e),
-        )
+    user = await user_service.create_user(user_data)
     return ResponseModel(
         success=True,
         message="Created Successfully",
@@ -36,7 +33,9 @@ async def register_user(
 
 
 @router.post("/login", response_model=Token, status_code=status.HTTP_200_OK)
+@limiter.limit("10/minute")
 async def user_login(
+    request: Request,
     login_data: LoginRequest,
     db: AsyncDatabase = Depends(get_db),
 ):
@@ -56,7 +55,9 @@ async def user_login(
 
 
 @router.post("/refresh", response_model=Token, status_code=status.HTTP_200_OK)
+@limiter.limit("20/minute")
 async def refresh_access_token(
+    request: Request,
     payload_in: RefreshRequest,
     db: AsyncDatabase = Depends(get_db),
 ):

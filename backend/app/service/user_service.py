@@ -1,5 +1,6 @@
 from typing import Optional
 from bson import ObjectId
+from backend.app.core.errors import DuplicateError
 from backend.app.schema.user import UserCreate, UserInDB, UserUpdate
 from backend.app.core.security import Security
 from datetime import datetime
@@ -19,7 +20,7 @@ class UserService:
             ]
         })
         if existing_user:
-            raise ValueError("User already exist")
+            raise DuplicateError("User already exists")
         hash_password = Security.get_password_hash(user_data.password)
         user_dict = user_data.model_dump(exclude={"password"})
         user_dict.update({
