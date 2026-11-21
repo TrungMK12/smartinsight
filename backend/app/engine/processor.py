@@ -37,6 +37,10 @@ class DocumentProcessor:
                 except UnicodeDecodeError:
                     continue
             raise ValueError("Failed to decode text file")
+
+    @staticmethod
+    def process_markdown(file_content: bytes) -> str:
+        return DocumentProcessor.process_txt(file_content)
     
     @staticmethod
     def chunk_text(
